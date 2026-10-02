@@ -1,0 +1,263 @@
+-- Configuration
+local CORRECT_KEY = "ZeroinHubKeyHsksowhBakalwjejBakalwjebGslapwies"
+local SCRIPT_URL = "https://zeroinhub.com/api/script"
+local GETKEY_URL = "https://link4m.net/IIv7ePT"
+
+-- Tên file lưu cache 24h
+local SAVE_FILE_NAME = "ZeroinHub_KeyCache.json"
+local CACHE_DURATION = 86400 -- 24 giờ tính bằng giây (24 * 60 * 60)
+
+-- Hàm kiểm tra xem đã lưu key và còn hạn hay không
+local function checkSavedKey()
+    if readfile and isfile and isfile(SAVE_FILE_NAME) then
+        local success, data = pcall(function()
+            return game:GetService("HttpService"):JSONDecode(readfile(SAVE_FILE_NAME))
+        end)
+        if success and data and data.key == CORRECT_KEY then
+            local currentTime = os.time()
+            if (currentTime - data.timestamp) < CACHE_DURATION then
+                return true -- Key vẫn còn hiệu lực trong vòng 24h
+            end
+        end
+    end
+    return false
+end
+
+-- Hàm lưu key kèm thời gian
+local function saveKeyCache()
+    if writefile then
+        local data = {
+            key = CORRECT_KEY,
+            timestamp = os.time()
+        }
+        pcall(function()
+            writefile(SAVE_FILE_NAME, game:GetService("HttpService"):JSONEncode(data))
+        end)
+    end
+end
+
+-- Nếu đã lưu key hợp lệ trong 24h thì bỏ qua bảng nhập key và chạy thẳng script chính
+if checkSavedKey() then
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(SCRIPT_URL))()
+    end)
+    if not success then
+        warn("Failed to load main script: " .. tostring(err))
+    end
+    return
+end
+
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+
+-- Remove old UI if exists to prevent duplication
+if CoreGui:FindFirstChild("ZeroinHubKeySystem") then
+    CoreGui.ZeroinHubKeySystem:Destroy()
+end
+
+-- Create UI
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local UIStroke = Instance.new("UIStroke")
+local Title = Instance.new("TextLabel")
+local Subtitle = Instance.new("TextLabel")
+local TextBox = Instance.new("TextBox")
+local TextBoxCorner = Instance.new("UICorner")
+local TextBoxStroke = Instance.new("UIStroke")
+
+-- Button Holder (Side-by-side buttons)
+local ButtonHolder = Instance.new("Frame")
+local UIListLayout = Instance.new("UIListLayout")
+
+-- Get Key Button
+local GetKeyBtn = Instance.new("TextButton")
+local GetKeyCorner = Instance.new("UICorner")
+
+-- Submit / Check Key Button
+local SubmitBtn = Instance.new("TextButton")
+local SubmitCorner = Instance.new("UICorner")
+
+-- Status Label
+local StatusLabel = Instance.new("TextLabel")
+
+-- Parent to CoreGui
+ScreenGui.Name = "ZeroinHubKeySystem"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -135)
+MainFrame.Size = UDim2.new(0, 420, 0, 270)
+MainFrame.ClipsDescendants = true
+
+UICorner.CornerRadius = UDim.new(0, 14)
+UICorner.Parent = MainFrame
+
+-- Green Neon Outline
+UIStroke.Parent = MainFrame
+UIStroke.Color = Color3.fromRGB(0, 255, 100)
+UIStroke.Transparency = 0.4
+UIStroke.Thickness = 1.5
+
+-- Title
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 0, 0, 18)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Font = Enum.Font.GothamBlack
+Title.Text = "ZEROIN HUB"
+Title.TextColor3 = Color3.fromRGB(0, 255, 100)
+Title.TextSize = 26
+
+-- Subtitle
+Subtitle.Name = "Subtitle"
+Subtitle.Parent = MainFrame
+Subtitle.BackgroundTransparency = 1
+Subtitle.Position = UDim2.new(0, 0, 0, 48)
+Subtitle.Size = UDim2.new(1, 0, 0, 20)
+Subtitle.Font = Enum.Font.GothamMedium
+Subtitle.Text = "Please enter your key to continue"
+Subtitle.TextColor3 = Color3.fromRGB(140, 140, 140)
+Subtitle.TextSize = 13
+
+-- TextBox
+TextBox.Name = "KeyBox"
+TextBox.Parent = MainFrame
+TextBox.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+TextBox.Position = UDim2.new(0.08, 0, 0.35, 0)
+TextBox.Size = UDim2.new(0.84, 0, 0, 46)
+TextBox.Font = Enum.Font.GothamMedium
+TextBox.PlaceholderText = "Enter your key here..."
+TextBox.PlaceholderColor3 = Color3.fromRGB(90, 90, 90)
+TextBox.Text = ""
+TextBox.TextColor3 = Color3.fromRGB(240, 240, 240)
+TextBox.TextSize = 15
+TextBox.ClearTextOnFocus = false
+
+TextBoxCorner.CornerRadius = UDim.new(0, 8)
+TextBoxCorner.Parent = TextBox
+
+TextBoxStroke.Parent = TextBox
+TextBoxStroke.Color = Color3.fromRGB(45, 45, 45)
+TextBoxStroke.Thickness = 1
+
+-- Button Holder Layout
+ButtonHolder.Name = "ButtonHolder"
+ButtonHolder.Parent = MainFrame
+ButtonHolder.BackgroundTransparency = 1
+ButtonHolder.Position = UDim2.new(0.08, 0, 0.62, 0)
+ButtonHolder.Size = UDim2.new(0.84, 0, 0, 44)
+
+UIListLayout.Parent = ButtonHolder
+UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 12)
+
+-- Get Key Button
+GetKeyBtn.Name = "GetKeyBtn"
+GetKeyBtn.Parent = ButtonHolder
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+GetKeyBtn.Size = UDim2.new(0.48, -6, 1, 0)
+GetKeyBtn.Font = Enum.Font.GothamBold
+GetKeyBtn.Text = "GET KEY"
+GetKeyBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+GetKeyBtn.TextSize = 14
+GetKeyBtn.LayoutOrder = 1
+
+GetKeyCorner.CornerRadius = UDim.new(0, 8)
+GetKeyCorner.Parent = GetKeyBtn
+
+-- Submit / Check Key Button
+SubmitBtn.Name = "SubmitBtn"
+SubmitBtn.Parent = ButtonHolder
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 80)
+SubmitBtn.Size = UDim2.new(0.48, -6, 1, 0)
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.Text = "CHECK KEY"
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.TextSize = 14
+SubmitBtn.LayoutOrder = 2
+
+SubmitCorner.CornerRadius = UDim.new(0, 8)
+SubmitCorner.Parent = SubmitBtn
+
+-- Status Label
+StatusLabel.Name = "StatusLabel"
+StatusLabel.Parent = MainFrame
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Position = UDim2.new(0, 0, 0.86, 0)
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Font = Enum.Font.GothamMedium
+StatusLabel.Text = ""
+StatusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
+StatusLabel.TextSize = 13
+
+-- Slow & Smooth Shake Animation
+local function slowSmoothShake()
+    local originalPos = UDim2.new(0.5, -210, 0.5, -135)
+    local tweenInfo = TweenInfo.new(0.06, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+    
+    task.spawn(function()
+        TweenService:Create(MainFrame, tweenInfo, {Position = originalPos + UDim2.new(0, 10, 0, 0)}):Play()
+        task.wait(0.06)
+        TweenService:Create(MainFrame, tweenInfo, {Position = originalPos + UDim2.new(0, -10, 0, 0)}):Play()
+        task.wait(0.06)
+        TweenService:Create(MainFrame, tweenInfo, {Position = originalPos + UDim2.new(0, 6, 0, 0)}):Play()
+        task.wait(0.06)
+        TweenService:Create(MainFrame, tweenInfo, {Position = originalPos + UDim2.new(0, -6, 0, 0)}):Play()
+        task.wait(0.06)
+        TweenService:Create(MainFrame, tweenInfo, {Position = originalPos}):Play()
+    end)
+end
+
+-- Get Key Action
+GetKeyBtn.MouseButton1Click:Connect(function()
+    StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+    StatusLabel.Text = "Get key link copied to clipboard!"
+    
+    if setclipboard then
+        setclipboard(GETKEY_URL)
+    end
+end)
+
+-- Check Key Action
+SubmitBtn.MouseButton1Click:Connect(function()
+    local enteredKey = TextBox.Text
+    
+    if enteredKey == CORRECT_KEY then
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+        StatusLabel.Text = "Key verified! Loading script..."
+        
+        -- Lưu key vào cache để dùng trong 24h tới
+        saveKeyCache()
+        
+        -- Smooth closing transition
+        local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+        
+        task.wait(0.4)
+        ScreenGui:Destroy()
+        
+        -- Run main script
+        local success, err = pcall(function()
+            loadstring(game:HttpGet(SCRIPT_URL))()
+        end)
+        
+        if not success then
+            warn("Failed to load main script: " .. tostring(err))
+        end
+    else
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
+        StatusLabel.Text = "Invalid Key! Please try again."
+        
+        -- Xóa sạch chữ ngay lập tức và chạy hiệu ứng lắc chậm mượt
+        TextBox.Text = ""
+        slowSmoothShake()
+    end
+end)
